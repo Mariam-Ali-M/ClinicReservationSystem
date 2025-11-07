@@ -22,5 +22,4 @@ public class Patient extends User{
     public List<Appointment> getAppointmentList(Clinic clinic) {
         return clinic.getAppointmentsForPatient(this);
     }
-    
 }
