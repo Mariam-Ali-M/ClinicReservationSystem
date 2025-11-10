@@ -24,14 +24,17 @@ public class Clinic {
         return ratings;
     }
 
-    public Clinic(int ID, int departmentID, String name, String address, double price, Schedule schedule, double avgRating) {
+    public void addToRatings(Rating x) {
+        this.ratings.add(x);
+    }
+
+    public Clinic(int ID, int departmentID, String name, String address, double price, Schedule schedule) {
         this.ID = ID;
         this.departmentID = departmentID;
         this.name = name;
         this.address = address;
         this.price = price;
         this.schedule = schedule;
-        this.avgRating = avgRating;
         this.appointments = new ArrayList();
         this.ratings = new ArrayList();
     }
@@ -105,6 +108,21 @@ public class Clinic {
 
     public List<Appointment> getAppointments() {
         return appointments;
+    }
+    public List<TimeSlot> getAvailableSlot() {
+        List<TimeSlot> total = schedule.getSlots();
+        List<TimeSlot> Booked = new ArrayList();
+        for(Appointment x: appointments){
+            Booked.add(x.getAppointmentDateTime());
+        }
+        
+        List<TimeSlot> r = new ArrayList();
+        for(TimeSlot x : total) {
+            if(!Booked.contains(x)) {
+                r.add(x);
+            }
+        }
+        return r;
     }
     
     

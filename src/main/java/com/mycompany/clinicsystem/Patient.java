@@ -18,7 +18,7 @@ public class Patient extends User{
     }
     public void addRating(Clinic clinic, int score, String comment) {
         Rating rating = new Rating(this, clinic, score, comment);
-        clinic.getRatings().add(rating);
+        clinic.addToRatings(rating);
     }
     public List<Appointment> getAppointmentList() {
         return patientAppointments;

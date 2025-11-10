@@ -19,6 +19,7 @@ public class Appointment {
         this.patient = patient;
         this.clinic = clinic;
         this.appointmentDateTime = appointmentDateTime;
+        appointmentDateTime.markAsBooked();
     }
     
     
@@ -36,6 +37,7 @@ public class Appointment {
 
     public void setAppointmentDateTime(TimeSlot appointmentDateTime) {
         this.appointmentDateTime = appointmentDateTime;
+        appointmentDateTime.markAsBooked();
     }
     
     

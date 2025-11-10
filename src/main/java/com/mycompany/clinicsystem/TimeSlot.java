@@ -63,4 +63,10 @@ public class TimeSlot {
     public void markAsAvailable() {
         isBooked = false;
     }
+
+    @Override
+    public String toString() {
+        return "TimeSlot{" + "day=" + day + ", startTime=" + startTime + ", endTime=" + endTime + ", isBooked=" + isBooked + '}';
+    }
+    
 }

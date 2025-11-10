@@ -50,7 +50,7 @@ public class Schedule {
     }
     
    public void generateTimeSlots() {
-    slots.clear(); // نمسح أي مواعيد قديمة
+    slots.clear();
 
     if (weeklyRules==null || weeklyRules.isEmpty()) {
         System.out.println(" No working hours defined yet.");
