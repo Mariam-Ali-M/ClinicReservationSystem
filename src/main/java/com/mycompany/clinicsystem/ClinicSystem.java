@@ -4,7 +4,6 @@
 
 package com.mycompany.clinicsystem;
 import java.time.DayOfWeek;
-import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.*;
 
@@ -68,6 +67,9 @@ public class ClinicSystem {
      // Handles user login for both practitioners and patients
     static void login() {
         
+//        cur_Practitioner = null;
+//        cur_Patient = null;
+        
         System.out.println("-- Login --");
         System.out.print("email: ");
         String email = in.nextLine();
@@ -99,9 +101,8 @@ public class ClinicSystem {
         } 
         else {
             System.out.println("Invalid login ");
-            login();
+            return;     
         }
-        
     }
     
 // Handles user registration for practitioners or patients
@@ -214,33 +215,34 @@ public class ClinicSystem {
     }
 
     
-    
     // Practitioner menu
     
     private static void doctorMenu() {
-        
-        System.out.println("️ Welcome Dr. " + cur_Practitioner.name);
-        System.out.println("1. Add Clinic");
-        System.out.println("2. View Clinic");
-        System.out.println("3. Logout");
-        System.out.print("> ");
-        int choice = in.nextInt();
-        in.nextLine();
-        
-         switch (choice) {
-            case 1:
-                addClinic();
-                break;
-            case 2:
-                viewClinic();
-                break;
-            case 3:
-                cur_Practitioner = null;
-                System.out.println("Logged out ");
-                return;
-            default:
-                System.out.println(" Invalid choice");
-        }
+        while(true){
+            System.out.println("===============");
+            System.out.println("️ Welcome Dr. " + cur_Practitioner.name);
+            System.out.println("1. Add Clinic");
+            System.out.println("2. View Clinic");
+            System.out.println("3. Logout");
+            System.out.print("> ");
+            int choice = in.nextInt();
+            in.nextLine();
+
+             switch (choice) {
+                case 1:
+                    addClinic();
+                    break;
+                case 2:
+                    viewClinic();
+                    break;
+                case 3:
+                    cur_Practitioner = null;
+                    System.out.println("Logged out ");
+                    return;
+                default:
+                    System.out.println(" Invalid choice");
+            }
+        } 
     }
 
     // Patient menu
@@ -278,68 +280,163 @@ public class ClinicSystem {
     // ----------------------------------------------------------
     
     // Adds a new clinic for the current practitioner
+    
         private static void addClinic() {
-        System.out.println("\n-- Add Clinic --");
-        int ID = generateID();
+            
+            System.out.println("\n-- Add Clinic --");
+            int ID = generateID();
 
-        //in.nextLine();
-        System.out.print("Enter clinic name: ");
-        String name = in.nextLine();
+            System.out.print("Enter clinic name: ");
+            String name = in.nextLine().trim();
+            while (name.isEmpty() || name.length() < 3 || !name.matches("[a-zA-Z ]+")) {
+                System.out.println("Clinic name must be at least 3 characters and contain letters only");
+                System.out.print("Enter clinic name: ");
+                name = in.nextLine().trim();
+            }
 
-        System.out.print("Enter clinic price: ");
-        double price = in.nextDouble();
-        in.nextLine();
+            double price = 0;
+            while (true) {
+                System.out.print("Enter clinic price: ");
+                String priceStr = in.nextLine().trim();
+                try {
+                    price = Double.parseDouble(priceStr);
+                    if (price < 0) {
+                        System.out.println("Price cannot be negative.");
+                        continue;
+                    }
+                    break;
+                } catch (Exception e) {
+                    System.out.println("Invalid price. Please enter a number.");
+                }
+            }
 
-        System.out.print("Enter address: ");
-        String address = in.nextLine();
+            System.out.print("Enter address: ");
+            String address = in.nextLine().trim();
+            while (address.isEmpty()) {
+                System.out.println("Address cannot be empty.");
+                System.out.print("Enter address: ");
+                address = in.nextLine().trim();
+            }
 
-        System.out.println("Choose specialty:");
-        System.out.println("1. Cardiology");
-        System.out.println("2. Dermatology");
-        System.out.println("3. Pediatrics");
-        System.out.println("4. General");
-        System.out.print("> ");
-        int choice = in.nextInt();
-        in.nextLine();
+            // Specialty validation (issue 8)
+            int choice = 0;
+            while (true) {
+                System.out.println("Choose specialty:");
+                System.out.println("1. Cardiology");
+                System.out.println("2. Dermatology");
+                System.out.println("3. Pediatrics");
+                System.out.println("4. General");
+                System.out.print("> ");
+                String chStr = in.nextLine().trim();
+                try {
+                    choice = Integer.parseInt(chStr);
+                    if (choice < 1 || choice > 4) {
+                        System.out.println("Invalid specialty. Choose 1-4.");
+                        continue;
+                    }
+                    break;
+                } catch (Exception e) {
+                    System.out.println("Invalid input. Enter the number of the specialty.");
+                }
+            }
 
-        Clinic clinic = new Clinic(ID, choice, name, address, price, null);
+            Clinic clinic = new Clinic(ID, choice, name, address, price, null);
 
-        System.out.println("\nEnter slot duration in minutes:");
-        int slotDurationInMinutes = in.nextInt();
-        in.nextLine();
+            // slot duration validation (issue 10)
+            int slotDurationInMinutes = 0;
+            while (true) {
+                System.out.print("\nEnter slot duration in minutes (e.g. 15): ");
+                String s = in.nextLine().trim();
+                try {
+                    slotDurationInMinutes = Integer.parseInt(s);
+                    if (slotDurationInMinutes < 5) { //
+                        System.out.println("Slot duration must be greater than or equal 5 min.");
+                        continue;
+                    }
+                    break;
+                } catch (Exception e) {
+                    System.out.println("Invalid input. Please enter an integer number of minutes.");
+                }
+            }
 
-        Schedule schedule = new Schedule(generateID(), slotDurationInMinutes, null);
-        List<WorkingHoursRule> rules = new ArrayList<>();
+            Schedule schedule = new Schedule(generateID(), slotDurationInMinutes, null);
+            List<WorkingHoursRule> rules = new ArrayList<>();
 
-        while (true) {
-            System.out.print("Add day? (Y/N): ");  // validation
-            String ans = in.nextLine().trim().toUpperCase();
-            if (ans.equals("N")) break;
+            while (true) {
+                System.out.print("Add day? (Y/N): ");
+                String ans = in.nextLine().trim().toUpperCase();
+                if (ans.equals("N")) break;
+                if (!ans.equals("Y")) {
+                    System.out.println("Please answer Y or N.");
+                    continue;
+                }
 
-            System.out.print("Day of week (e.g. MONDAY): ");
-            DayOfWeek day = DayOfWeek.valueOf(in.nextLine().trim().toUpperCase());
+                DayOfWeek day = null;
+                while (true) {
+                    System.out.print("Day of week (e.g. MONDAY): ");
+                    String dayStr = in.nextLine().trim().toUpperCase();
+                    try {
+                        day = DayOfWeek.valueOf(dayStr);
+                        boolean exists = false;
+                        for (WorkingHoursRule r : rules) {
+                            if (r.getDay() == day) {
+                                exists = true;
+                                break;
+                            }
+                        }
+                        if (exists) {
+                            System.out.println("You already added working hours for " + day + ". Choose another day.");
+                            continue;
+                        }
+                        break;
+                    } catch (IllegalArgumentException e) {
+                        System.out.println("Invalid day! Please enter a valid day (e.g. MONDAY).");
+                    }
+                }
 
-            System.out.print("Start time (HH:MM): ");
-            LocalTime start = LocalTime.parse(in.nextLine().trim());
+                LocalTime start = null;
+                while (true) {
+                    System.out.print("Start time (HH:MM): ");
+                    String startStr = in.nextLine().trim();
+                    try {
+                        start = LocalTime.parse(startStr);
+                        break;
+                    } catch (Exception e) {
+                        System.out.println("Invalid time format! Please use HH:MM.");
+                    }
+                }
 
-            System.out.print("End time (HH:MM): ");
-            LocalTime end = LocalTime.parse(in.nextLine().trim());
+                LocalTime end = null;
+                while (true) {
+                    System.out.print("End time (HH:MM): ");
+                    String endStr = in.nextLine().trim();
+                    try {
+                        end = LocalTime.parse(endStr);
+                        if (end.isAfter(start)) {
+                            break;
+                        } else {
+                            System.out.println("End time must be AFTER start time!");
+                        }
+                    } catch (Exception e) {
+                        System.out.println("Invalid time format! Please use HH:MM.");
+                    }
+                }
 
-            rules.add(new WorkingHoursRule(day, start, end));
-        }
+                rules.add(new WorkingHoursRule(day, start, end));
+            }
 
-        schedule.setWeeklyRules(rules);
-        clinic.setSchedule(schedule);// time slots created
-        cur_Practitioner.setClinic(clinic);
-        clinics.add(clinic);
-        System.out.println("\nClinic added successfully ");
-        doctorMenu();
-        
+            schedule.setWeeklyRules(rules);
+            clinic.setSchedule(schedule); // time slots can be generated elsewhere using schedule info
+            cur_Practitioner.setClinic(clinic);
+            clinics.add(clinic);
+            System.out.println("\nClinic added successfully ");
+            return;     
     }
     
     // Views the current practitioner's clinic details
         
     private static void viewClinic() {
+        
         System.out.println("\n-- View Clinic --");
 
         if (cur_Practitioner.getClinic() == null) {
@@ -378,7 +475,7 @@ public class ClinicSystem {
                 }
             }
         }
-        doctorMenu();
+        return;
     }
     
     // Allows a patient to search clinics by specialty and book an appointment
@@ -390,10 +487,9 @@ public class ClinicSystem {
         System.out.println("2. Dermatology");
         System.out.println("3. Pediatrics");
         System.out.println("4. General");
-        System.out.print("> ");
+        System.out.print("> ");     
         int choice = in.nextInt();
         in.nextLine();
-
         List<Clinic> found = new ArrayList<>();
 
         for (Clinic c : clinics) {
@@ -431,6 +527,7 @@ public class ClinicSystem {
         boolean flag=true;
         DayOfWeek chosenDay = null;
         List<TimeSlot> availableSlots = new ArrayList<>();
+        
         while(flag){
             System.out.print("Choose a day (e.g. MONDAY): ");
             String dayInput = in.nextLine().trim().toUpperCase();
@@ -438,16 +535,32 @@ public class ClinicSystem {
                 chosenDay = DayOfWeek.valueOf(dayInput);
             } catch (Exception e) {
                 System.out.println("Invalid day name.");
-                return;
+                continue;
             }
+            availableSlots.clear();
             for (TimeSlot slot : selected.getSchedule().getSlots()) {
                 if (slot.getDay() == chosenDay && !slot.isBooked()) {
                     availableSlots.add(slot);
                 }
             }
 
-            if (availableSlots.isEmpty()) {
-                System.out.println("No available slots on " + chosenDay + ".");  
+            if (availableSlots.isEmpty()) { 
+                System.out.println("No available slots on " + chosenDay + " in this week ");
+                System.out.println("You can check if there is another available slot on a different day, or visit our app again next week !"); 
+                System.out.println("1. Check another day ");
+                System.out.println("2. Back to menu");
+                System.out.print("> ");
+                int ch= in.nextInt();
+                in.nextLine();
+                
+                if (ch == 2) {
+                    return;
+                } 
+                else {
+                    // loop continues to ask for another day
+                    continue;
+                }
+                // option wating list with patint email !
             }
             else {
                 flag=false;
@@ -474,6 +587,7 @@ public class ClinicSystem {
         System.out.println(" Appointment booked successfully for " + chosenDay + " " +
                             chosenSlot.getStartTime() + " - " + chosenSlot.getEndTime());
     }
+    
   // Views all appointments of the current patient
     
     private static void viewMyAppointments() {
