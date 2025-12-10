@@ -30,6 +30,7 @@ import util.PDFExporter;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
@@ -357,7 +358,7 @@ public class DoctorController {
 
     private HBox createAppointmentCard(Appointment a) {
         TimeSlot slot = a.getAppointmentDateTime();
-        if (slot == null) return new HBox(); // ← لا نستثني Cancelled هنا — نعرضها بس بلون مختلف
+        if (slot == null) return new HBox();
 
         HBox box = new HBox(10);
         box.setMinHeight(50);
@@ -368,12 +369,16 @@ public class DoctorController {
         switch (a.getStatus()) {
             case Cancelled_by_Patient:
             case Cancelled_by_Doctor:
-                bgColor = "#fdf2f2"; // أحمر فاتح
+                bgColor = "#fdf2f2";
                 borderColor = "#fadbd8";
                 break;
             case Completed:
-                bgColor = "#f6fef9"; // أخضر فاتح
+                bgColor = "#f6fef9";
                 borderColor = "#d5f5e3";
+                break;
+            case Absent: // ← دعم الحالة الجديدة في العرض (لو مستخدمة)
+                bgColor = "#fef9e7";
+                borderColor = "#f9e79f";
                 break;
             default: // Booked
                 bgColor = "#ffffff";
@@ -387,20 +392,23 @@ public class DoctorController {
                 "-fx-alignment: CENTER_LEFT; " +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 2, 0, 0, 1);");
 
-        // المحتوى
         String patientName = (a.getPatient() != null) ? a.getPatient().getName() : "—";
         Label patientLabel = new Label("👤 " + patientName);
         patientLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #333;");
 
         String timeText = slot.getStartTime().format(DateTimeFormatter.ofPattern("hh:mm a"));
-        Label timeLabel = new Label("⏰ " + timeText);
+        // ✅ حساب وقت الانتهاء (استنادًا لمدة السلوت)
+        int durationMinutes = a.getClinic() != null && a.getClinic().getSchedule() != null
+                ? a.getClinic().getSchedule().getSlotDurationInMinutes()
+                : 30;
+        LocalDateTime endTime = LocalDateTime.from(slot.getStartTime().plusMinutes(durationMinutes));
+        String endTimeText = endTime.format(DateTimeFormatter.ofPattern("hh:mm a"));
+        Label timeLabel = new Label("⏰ " + timeText + " – " + endTimeText);
         timeLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #666;");
 
-        // ✅ هنا بيظهر "Cancelled by Patient" أو "Cancelled by Doctor" تلقائي (من الـ toString())
         Label statusLabel = new Label("📌 " + a.getStatus());
         statusLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #555;");
 
-        // Expiry (لو استشارة)
         if (a.getConsultationExpiryDate() != null) {
             Label expiryLabel = new Label("⏳ Valid until: " +
                     a.getConsultationExpiryDate().format(DateTimeFormatter.ofPattern("dd/MM")));
@@ -411,8 +419,7 @@ public class DoctorController {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        // ✅ زر الإلغاء (بيظهر للمريض فقط في صفحة الحجوزات، لكن في صفحة الدكتور — بيظهر للدكتور)
-        // افتراض: دا في صفحة الدكتور → نستخدم Cancelled_by_Doctor
+        // ✅ زر الإلغاء (يبقى ظاهرًا دائمًا — الدكتور حر يلغي أي وقت)
         Button cancelBtn = new Button("Cancel");
         cancelBtn.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white; " +
                 "-fx-font-size: 11px; -fx-padding: 3 10; -fx-background-radius: 4;");
@@ -424,19 +431,11 @@ public class DoctorController {
 
             confirm.showAndWait().ifPresent(res -> {
                 if (res == ButtonType.OK) {
-                    // ✅ هنا نحدد: الإلغاء من الدكتور
                     a.cancelByDoctor();
-
                     try {
-                        // ✅ نستخدم toDatabaseValue() علشان يخزن كـ "Cancelled"
                         new AppointmentDAO().updateStatus(a.getId(), a.getStatus());
-                        // أو:
-                        // new AppointmentDAO().updateStatus(a.getId(), Status.Cancelled_by_Doctor);
-
-                        // إزالة الكارت من القائمة
                         appointmentsList.getChildren().remove(box);
                         showAlert("Success", "Appointment cancelled by doctor.");
-
                     } catch (SQLException ex) {
                         ex.printStackTrace();
                         showAlert("Error", "Failed to cancel appointment.");
@@ -445,7 +444,76 @@ public class DoctorController {
             });
         });
 
-        box.getChildren().addAll(patientLabel, timeLabel, statusLabel, spacer, cancelBtn);
+        // ✅ ✅ ✅ التعديل الوحيد المطلوب: إضافة زرَين لو الموعد Booked + الوقت انتهى
+        LocalDateTime now = LocalDateTime.now();
+        boolean isOverdueAndBooked = a.getStatus() == Status.Booked && now.isAfter(endTime);
+
+        if (isOverdueAndBooked) {
+            // زر "Mark as Completed"
+            Button completeBtn = new Button("✓ Completed");
+            completeBtn.setStyle("-fx-background-color: #2E7D32; -fx-text-fill: white; " +
+                    "-fx-font-size: 11px; -fx-padding: 3 8; -fx-background-radius: 4;");
+            completeBtn.setOnAction(e -> {
+                a.setStatus(Status.Completed);
+                try {
+                    new AppointmentDAO().updateStatus(a.getId(), a.getStatus());
+                    // تحديث العرض: غير اللون، وأعد رسم الحالة
+                    Platform.runLater(() -> {
+                        box.setStyle(box.getStyle().replace(bgColor, "#f6fef9").replace(borderColor, "#d5f5e3"));
+                        statusLabel.setText("📌 " + a.getStatus());
+                        statusLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #2E7D32;");
+                        // إخفاء الزرارين بعد التحديث
+                        box.getChildren().remove(completeBtn);
+                        if (box.getChildren().contains(spacer)) {
+                            int idx = box.getChildren().indexOf(spacer);
+                            if (idx >= 0 && idx + 1 < box.getChildren().size() &&
+                                    box.getChildren().get(idx + 1) instanceof Button &&
+                                    ((Button) box.getChildren().get(idx + 1)).getText().contains("Absent")) {
+                                box.getChildren().remove(idx + 1); // absentBtn
+                            }
+                        }
+                    });
+                    showAlert("Success", "Appointment marked as completed.");
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                    showAlert("Error", "Failed to complete appointment.");
+                }
+            });
+
+            // زر "Mark as Absent"
+            Button absentBtn = new Button("✖️ Absent");
+            absentBtn.setStyle("-fx-background-color: #FF9800; -fx-text-fill: white; " +
+                    "-fx-font-size: 11px; -fx-padding: 3 8; -fx-background-radius: 4;");
+            absentBtn.setOnAction(e -> {
+                a.setStatus(Status.Absent);
+                try {
+                    new AppointmentDAO().updateStatus(a.getId(), a.getStatus());
+                    Platform.runLater(() -> {
+                        box.setStyle(box.getStyle().replace(bgColor, "#fef9e7").replace(borderColor, "#f9e79f"));
+                        statusLabel.setText("📌 " + a.getStatus());
+                        statusLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #FF8F00;");
+                        // إخفاء الزرارين
+                        box.getChildren().remove(completeBtn);
+                        box.getChildren().remove(absentBtn);
+                    });
+                    showAlert("Success", "Patient marked as absent (No-Show).");
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                    showAlert("Error", "Failed to mark as absent.");
+                }
+            });
+
+            // نضع الزرارين قبل spacer (أي بعد العناصر، قبل الزر Cancel)
+            int spacerIndex = box.getChildren().indexOf(spacer);
+            if (spacerIndex >= 0) {
+                box.getChildren().add(spacerIndex, absentBtn);
+                box.getChildren().add(spacerIndex, completeBtn);
+            } else {
+                box.getChildren().addAll(completeBtn, absentBtn);
+            }
+        }
+
+        box.getChildren().addAll(spacer, cancelBtn);
         return box;
     }
     @FXML

@@ -37,7 +37,7 @@
         <TextField fx:id="consultationPriceField" promptText="e.g. 100.00" />
 
         <Label text="Consultation Validity (Days):" />
-        <Spinner fx:id="consultationDaysSpinner" />
+        <TextField fx:id="consultationDaysField" promptText="e.g. 7" />
 
         <Label text="💡 Patients can book consultations within this period after a visit."
                style="-fx-font-size: 11px; -fx-text-fill: #7f8c8d;" />
@@ -46,7 +46,6 @@
     <HBox alignment="CENTER_LEFT" spacing="10">
         <Label text="Working Hours" style="-fx-font-weight:bold; -fx-padding:6 0 0 0;" />
         <Region HBox.hgrow="ALWAYS" />
-        <CheckBox fx:id="resetAllCheck" text="Reset all rules on Save" />
     </HBox>
 
     <ScrollPane prefViewportHeight="240" fitToWidth="true">

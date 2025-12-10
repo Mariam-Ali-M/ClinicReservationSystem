@@ -456,7 +456,8 @@ public class PatientController {
         if (slot == null || a.getClinic() == null) return new HBox();
 
         Clinic clinic = a.getClinic();
-        String status = String.valueOf(a.getStatus());
+        // ✅ خدّي القيمة من الـ enum مباشرةً (أفضل من toString())
+        Status status = a.getStatus();
 
         VBox card = new VBox(10);
         card.setPrefWidth(300);
@@ -465,7 +466,7 @@ public class PatientController {
                 "-fx-border-radius: 12; " +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 8, 0, 0, 2); " +
                 "-fx-border-width: 1px; " +
-                "-fx-border-color: " + getStatusBorderColor(status) + ";");
+                "-fx-border-color: " + getStatusBorderColor(status.name()) + ";");
 
         HBox header = new HBox(10);
         Label clinicLabel = new Label("🏥 " + clinic.getName());
@@ -482,20 +483,22 @@ public class PatientController {
         Label dateLabel = new Label("📅 " + slot.getDate() + " | ⏰ " +
                 slot.getStartTime().format(DateTimeFormatter.ofPattern("hh:mm a")));
         Label priceLabel = new Label("💰 " + String.format("%.2f EGP", clinic.getPrice()));
-        Label statusLabel = new Label("📌 " + status);
-        statusLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: " + getStatusColor(status) + ";");
+        Label statusLabel = new Label("📌 " + status); // ← هنا بيظهر "Completed" أو "Booked" حسب الـ enum.toString()
+        statusLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: " + getStatusColor(status.name()) + ";");
 
         HBox actions = new HBox(8);
         actions.setAlignment(Pos.CENTER_LEFT);
 
-        if ("Booked".equals(status)) {
+        // ✅ زر الإلغاء: يظهر فقط لو الحالة = Booked
+        if (status == Status.Booked) {
             Button cancelBtn = new Button("❌ Cancel");
             cancelBtn.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-size: 12px;");
             cancelBtn.setOnAction(e -> confirmCancelAndRate(a));
             actions.getChildren().add(cancelBtn);
         }
 
-        if ("Completed".equals(status)) {
+        // ✅ ✅ ✅ الزرار الوحيد المطلوب: يظهر **فقط لو الحالة = Completed**
+        if (status == Status.Completed) {
             try {
                 Rating existingRating = new RatingDAO().getRatingByPatientAndClinic(
                         currentPatient.getID(), clinic.getID());
@@ -508,8 +511,9 @@ public class PatientController {
             }
         }
 
+        // ✅ Follow-up: يظهر لو Booked أو Completed فقط
         if (clinic.getConsultationPrice() > 0 &&
-                ("Completed".equals(status) || "Booked".equals(status))) {
+                (status == Status.Booked || status == Status.Completed)) {
             Button returnBtn = new Button("🔁 Request Follow-up");
             returnBtn.setStyle("-fx-background-color: #3498db; -fx-text-fill: white; -fx-font-size: 12px;");
             returnBtn.setOnAction(e -> showAlert("Success", "Follow-up request sent to Dr. " + clinic.getDoctorName()));

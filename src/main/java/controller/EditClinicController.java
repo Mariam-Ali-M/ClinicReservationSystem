@@ -10,7 +10,7 @@ import java.sql.SQLException;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import javafx.geometry.Pos;  // ✅ مُضاف
+import javafx.geometry.Pos;
 
 public class EditClinicController {
 
@@ -19,12 +19,11 @@ public class EditClinicController {
     @FXML private TextField slotDurationField;
     @FXML private TextField priceField;
     @FXML private VBox rulesContainer;
-    @FXML private CheckBox resetAllCheck;
     @FXML private Label statusLabel;
     @FXML private CheckBox enableConsultationCheckBox;
     @FXML private VBox consultationFieldsBox;
     @FXML private TextField consultationPriceField;
-    @FXML private Spinner<Integer> consultationDaysSpinner;
+    @FXML private TextField consultationDaysField; // ← ✅ تم تغييره من Spinner إلى TextField
 
     private Clinic clinic;
     private Practitioner doctor;
@@ -39,7 +38,6 @@ public class EditClinicController {
     private final List<RuleRow> ruleRows = new ArrayList<>();
 
     // ===== Inner Class لتمثيل سطر قاعدة في الواجهة =====
-    // ✅ تم إزالة كلمة 'static' — ليتمكّن من الوصول إلى ruleRows و rulesContainer
     private class RuleRow {
         final ComboBox<DayOfWeek> dayCombo;
         final ComboBox<LocalTime> fromCombo;
@@ -62,7 +60,7 @@ public class EditClinicController {
             deleteBtn.setPrefWidth(30);
 
             container = new HBox(8);
-            container.setAlignment(Pos.CENTER_LEFT);  // ✅ Pos معروف الآن
+            container.setAlignment(Pos.CENTER_LEFT);
             container.setStyle("-fx-padding: 8 10 8 10; -fx-background-color: #f8fbf9; -fx-border-color: #e0ebeb; -fx-border-width: 1; -fx-border-radius: 6; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 3, 0, 0, 1);");
             container.getChildren().addAll(
                     new Label("Day:"), dayCombo,
@@ -75,10 +73,10 @@ public class EditClinicController {
             if (isNew) {
                 deleteBtn.setOnAction(e -> {
                     rulesContainer.getChildren().remove(container);
-                    ruleRows.remove(this);  // ✅ تم تصحيح ; ; إلى ;
+                    ruleRows.remove(this);
                 });
             } else {
-                deleteBtn.setDisable(true); // القواعد القديمة لا تُحذف مباشرة — فقط عبر reset أو تعديل
+                deleteBtn.setDisable(true);
                 container.setStyle("-fx-padding: 8 10 8 10; -fx-background-color: #f0f7ff; -fx-border-color: #d0e3f5; -fx-border-width: 1; -fx-border-radius: 6; -fx-effect: none;");
             }
         }
@@ -113,11 +111,10 @@ public class EditClinicController {
             toCombo.setPromptText("HH:mm");
         }
     }
+
     @FXML
     public void initialize() {
-        consultationDaysSpinner.setValueFactory(
-                new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 365, 7)
-        );
+        // ✅ لا حاجة لـ setValueFactory لأن consultationDaysField دلوقتي TextField
     }
 
     // ===== Controller Lifecycle =====
@@ -134,12 +131,11 @@ public class EditClinicController {
         }
 
         loadExistingRulesToUI();
-        // ★★ تحميل حالة الاستشارة من العيادة ★★
         boolean hasConsultation = clinic.getConsultationPrice() > 0
                 && clinic.getConsultationDurationDays() > 0;
         enableConsultationCheckBox.setSelected(hasConsultation);
         consultationPriceField.setText(String.format("%.2f", clinic.getConsultationPrice()));
-        consultationDaysSpinner.getValueFactory().setValue(clinic.getConsultationDurationDays());
+        consultationDaysField.setText(String.valueOf(clinic.getConsultationDurationDays())); // ← ✅ setText بدل getValueFactory
         onConsultationToggle(); // تحديث ظهور الحقول
     }
 
@@ -152,19 +148,16 @@ public class EditClinicController {
                 : new ArrayList<>();
 
         if (existing.isEmpty()) {
-            // لا توجد قواعد → ابدأ بسطر فارغ
             RuleRow newRow = new RuleRow(true);
             ruleRows.add(newRow);
             rulesContainer.getChildren().add(newRow.container);
         } else {
-            // عرض القواعد الحالية كـ "read-only" rows (لا تُحذف مباشرة)
             for (WorkingHoursRule rule : existing) {
                 RuleRow row = new RuleRow(false);
                 row.setRule(rule);
                 ruleRows.add(row);
                 rulesContainer.getChildren().add(row.container);
             }
-            // أضف سطرًا فارغًا للإضافة
             addNewRuleRow();
         }
     }
@@ -180,7 +173,7 @@ public class EditClinicController {
         rulesContainer.getChildren().add(newRow.container);
     }
 
-    // ===== Save Logic مع دعم الجدولين (Active + Pending) — ✅ بدون تعديل الـ Active الآن =====
+    // ===== Save Logic مع Validation مُحدّث =====
     @FXML
     private void onSave() {
         try {
@@ -205,18 +198,38 @@ public class EditClinicController {
                 return;
             }
 
-            // ★★ نظام الاستشارة ★★
+            // ★★ نظام الاستشارة — مع Validation جديد ★★
             boolean enableConsultation = enableConsultationCheckBox.isSelected();
             double consultationPrice = 0.0;
             int consultationDays = 0;
 
             if (enableConsultation) {
+                // ✅ قراءة السعر
                 try {
                     consultationPrice = Double.parseDouble(consultationPriceField.getText().trim());
                 } catch (NumberFormatException e) {
-                    consultationPrice = 0.0;
+                    showAlert("Validation Error", "Consultation price must be a valid number.");
+                    return;
                 }
-                consultationDays = consultationDaysSpinner.getValue();
+
+                // ✅ قراءة الأيام
+                try {
+                    consultationDays = Integer.parseInt(consultationDaysField.getText().trim());
+                } catch (NumberFormatException e) {
+                    showAlert("Validation Error", "Consultation days must be a valid integer.");
+                    return;
+                }
+
+                // ✅ ✅ ✅ Validation: سعر الاستشارة < سعر الكشف + الأيام ≤ 30
+                if (consultationPrice >= price) {
+                    showAlert("Validation Error",
+                            "❌ Consultation price must be LESS than the main visit price (" + String.format("%.2f", price) + " EGP).");
+                    return;
+                }
+                if (consultationDays <= 0 || consultationDays > 30) {
+                    showAlert("Validation Error", "❌ Consultation duration must be between 1 and 30 days.");
+                    return;
+                }
             }
 
             // جمع القواعد...
@@ -265,40 +278,6 @@ public class EditClinicController {
         }
     }
 
-    // ✅ دالة التحقق من وجود حجوزات مستقبلية في فترة زمنية
-    private boolean hasUpcomingAppointmentsInRule(WorkingHoursRule rule) throws SQLException {
-        int clinicId = clinic.getID();
-        DayOfWeek day = rule.getDay();
-        LocalTime from = rule.getStartTime();
-        LocalTime to = rule.getEndTime();
-
-        // تحويل DayOfWeek (Mon=1 → Sun=7) إلى DAYOFWEEK (Sun=1 → Sat=7)
-        int sqlDay = (day.getValue() % 7) + 1;
-
-        String sql = """
-            SELECT 1 FROM Appointments a
-            JOIN TimeSlots ts ON a.time_slot_id = ts.id
-            WHERE a.clinic_id = ?
-              AND DATE(ts.appointment_time) >= CURDATE()
-              AND DAYOFWEEK(ts.appointment_time) = ?
-              AND TIME(ts.appointment_time) >= ?
-              AND TIME(ts.appointment_time) < ?
-              AND a.status NOT IN ('CANCELLED', 'COMPLETED')
-            LIMIT 1
-            """;
-
-        try (var con = database.DBConnection.getConnection();
-             var ps = con.prepareStatement(sql)) {
-
-            ps.setInt(1, clinicId);
-            ps.setInt(2, sqlDay);
-            ps.setTime(3, java.sql.Time.valueOf(from));
-            ps.setTime(4, java.sql.Time.valueOf(to));
-
-            return ps.executeQuery().next();
-        }
-    }
-
     @FXML
     private void onCancel() {
         Stage stage = (Stage) clinicNameField.getScene().getWindow();
@@ -312,63 +291,10 @@ public class EditClinicController {
         alert.showAndWait();
     }
 
-
-
     @FXML
     private void onConsultationToggle() {
         boolean enabled = enableConsultationCheckBox.isSelected();
         consultationFieldsBox.setVisible(enabled);
         consultationFieldsBox.setManaged(enabled);
     }
-
-    /*
-    * private void handleBookAppointment(Practitioner selectedDoctor, TimeSlot slot) {
-    try {
-        Clinic clinic = selectedDoctor.getClinic();
-        boolean hasConsultation = clinic.getConsultationPrice() > 0
-                               && clinic.getConsultationDurationDays() > 0;
-
-        // جيب آخر كشف (VISIT) مكتمل للمريض مع الدكتور ده
-        Appointment lastVisit = appointmentDAO.getLastCompletedVisit(
-            currentPatient.getID(),
-            selectedDoctor.getID()
-        );
-
-        Appointment newAppointment = new Appointment();
-        newAppointment.setPatient(currentPatient);
-        newAppointment.setPractitioner(selectedDoctor);
-        newAppointment.setAppointmentDateTime(slot);
-        newAppointment.setClinic(clinic);
-        newAppointment.setStatus(Status.Booked);
-
-        if (!hasConsultation || lastVisit == null) {
-            // → كشف جديد
-            newAppointment.setAppointmentType(AppointmentType.VISIT);
-            newAppointment.setPrice(clinic.getPrice()); // سعر الكشف
-        } else {
-            // تحقق: هل مدة الاستشارة لسه ما انتهتش؟
-            LocalDate expiry = lastVisit.getAppointmentDateTime().getDate()
-                    .plusDays(clinic.getConsultationDurationDays());
-
-            if (!LocalDate.now().isAfter(expiry)) {
-                // → استشارة
-                newAppointment.setAppointmentType(AppointmentType.CONSULTATION);
-                newAppointment.setPrice(clinic.getConsultationPrice());
-                newAppointment.setConsultationExpiryDate(expiry); // مهم للإحصاءات
-            } else {
-                // → كشف جديد (انتهت المدة)
-                newAppointment.setAppointmentType(AppointmentType.VISIT);
-                newAppointment.setPrice(clinic.getPrice());
-            }
-        }
-
-        // احفظ الموعد
-        appointmentDAO.saveAppointment(newAppointment);
-        showAlert("Success", "Appointment booked successfully!");
-
-    } catch (Exception ex) {
-        ex.printStackTrace();
-        showAlert("Error", "Failed to book appointment.");
-    }
-}*/
 }
