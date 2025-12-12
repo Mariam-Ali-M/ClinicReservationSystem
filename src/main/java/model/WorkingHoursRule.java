@@ -5,12 +5,11 @@ import java.time.LocalTime;
 
 public class WorkingHoursRule {
 
-    private int scheduleId;      // FK → Schedule.id
+    private int scheduleId;
     private DayOfWeek day;
     private LocalTime startTime;
     private LocalTime endTime;
 
-    // Constructor كامل
     public WorkingHoursRule(int scheduleId, DayOfWeek day, LocalTime startTime, LocalTime endTime) {
         this.scheduleId = scheduleId;
         this.day = day;
@@ -18,9 +17,7 @@ public class WorkingHoursRule {
         this.endTime = endTime;
     }
 
-    // ==============================
-    // GETTERS & SETTERS
-    // ==============================
+
     public int getScheduleId() {
         return scheduleId;
     }

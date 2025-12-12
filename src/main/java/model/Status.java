@@ -20,7 +20,7 @@ public enum Status {
             case "Cancelled", "Cancelled_by_Patient" -> Cancelled_by_Patient;
             case "Cancelled_by_Doctor" -> Cancelled_by_Doctor;
             case "Completed" -> Completed;
-            case "Absent", "No-Show", "Absent (No-Show)" -> Absent; // ← دعم متعدد
+            case "Absent", "No-Show", "Absent (No-Show)" -> Absent;
             default -> Booked;
         };
     }

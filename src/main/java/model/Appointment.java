@@ -22,7 +22,7 @@ import java.time.LocalDateTime;
  * @author Javengers
  */
 public class Appointment {
-    private int id; //  تم إضافته
+    private int id;
     private Patient patient;
     private Clinic clinic;
     private TimeSlot appointmentDateTime;
@@ -37,10 +37,9 @@ public class Appointment {
         this.status = status;
     }
 
-    // Constructor للإضافة (بدون id، الحالة الافتراضية Booked)
     public Appointment(Patient patient, Clinic clinic, TimeSlot appointmentDateTime) {
         this(0, patient, clinic, appointmentDateTime, Status.Booked);
-        appointmentDateTime.markAsBooked(); // يتم حجز الموعد في الـ TimeSlot
+        appointmentDateTime.markAsBooked();
     }
     public Appointment(){
 
@@ -60,17 +59,14 @@ public class Appointment {
         this.appointmentDateTime = appointmentDateTime;
     }
 
-    // ✅ لإلغاء من المريض (الافتراضي)
     public void cancel() {
         cancel(Status.Cancelled_by_Patient);
     }
 
-    // ✅ لإلغاء من الدكتور (مخصص)
     public void cancelByDoctor() {
         cancel(Status.Cancelled_by_Doctor);
     }
 
-    // ★ قلب الدالة — مشترك
     private void cancel(Status newStatus) {
         this.status = newStatus;
         if (appointmentDateTime != null) {
@@ -116,17 +112,16 @@ public class Appointment {
     }
 
     public enum AppointmentType {
-        VISIT("Visit"),        // كشف أولي
-        CONSULTATION("Consultation"); // متابعة/استشارة
+        VISIT("Visit"),
+        CONSULTATION("Consultation");
 
         private final String displayName;
         AppointmentType(String displayName) { this.displayName = displayName; }
         @Override public String toString() { return displayName; }
     }
 
-    // المتغيرات الجديدة
     private AppointmentType appointmentType = AppointmentType.VISIT;
-    private LocalDate consultationExpiryDate; // null لو مش استشارة
+    private LocalDate consultationExpiryDate;
 
     // getters & setters
     public AppointmentType getAppointmentType() { return appointmentType; }

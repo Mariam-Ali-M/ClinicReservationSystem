@@ -69,9 +69,7 @@ public abstract class User {
     // Sets the user's password
     public void setPassword(String password) { this.password = password; }
 
-    // Sets the user's gender — ⚠️ موجود في الموديل، لكن في الواجهة نخليه read-only
     public void setGender(String gender) { this.gender = gender; }
 
-    // Sets the user's date of birth — ⚠️ نفس الكلام
     public void setDateOfBirth(LocalDate dateOfBirth) { this.dateOfBirth = dateOfBirth; }
 }

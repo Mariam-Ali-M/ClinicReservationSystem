@@ -10,11 +10,10 @@ public class Chat {
     private int id;
     private Patient patient;
     private Practitioner practitioner;
-    private List<Message> messages; // قائمة الرسائل
+    private List<Message> messages;
     private int lastReadByPatient;
     private int lastReadByPractitioner;
 
-    // ✅ constructor كامل
     public Chat(int id, Patient patient, Practitioner practitioner, List<Message> messages) {
         this.id = id;
         this.patient = patient;
@@ -22,14 +21,12 @@ public class Chat {
         this.messages = messages != null ? new ArrayList<>(messages) : new ArrayList<>();
     }
 
-    // ✅ constructor بدون ID وبدون رسائل (لإنشاء محادثة جديدة)
     public Chat(Patient patient, Practitioner practitioner) {
         this(0, patient, practitioner, new ArrayList<>());
     }
 
-    // ✅ constructor بدون رسائل (للاستخدام في الـ DAO بعد الجلب)
     public Chat(int id, Patient patient, Practitioner practitioner) {
-        this(id, patient, practitioner, new ArrayList<>()); // ← كان فيها 0 بدل id!
+        this(id, patient, practitioner, new ArrayList<>());
     }
     // constructors
     public Chat(int id, Patient patient, Practitioner practitioner,
@@ -56,11 +53,9 @@ public class Chat {
     public Practitioner getPractitioner() { return practitioner; }
     public void setPractitioner(Practitioner practitioner) { this.practitioner = practitioner; }
 
-    // دوال التعامل مع الرسائل
     public List<Message> getMessages() { return messages; }
     public void setMessages(List<Message> messages) { this.messages = messages; }
 
-    // إضافة رسالة جديدة إلى المحادثة
     public void addMessage(Message message) {
         this.messages.add(message);
     }

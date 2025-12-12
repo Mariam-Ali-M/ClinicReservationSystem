@@ -13,18 +13,6 @@ import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * Represents a medical clinic that belongs to a specific department.
- * Each clinic has identifying details, a pricing model, an associated schedule,
- * and collections of appointments and ratings.
- * 
- * This class is responsible for managing its schedule, appointments, and ratings,
- * as well as calculating its average rating.
- * 
- * @author Javengers
- */
-
- 
 public class Clinic {
 
     private int ID;
@@ -149,38 +137,7 @@ public class Clinic {
     public List<Appointment> getAppointments() {
         return appointments;
     }
-    //Returns a list of currently available time slots.
-     
-     /* This method compares all total slots in the schedule against
-      the slots already booked by appointments, and returns only
-      the unbooked (available) slots.*/
 
-   /* public List<TimeSlot> getAvailableSlots() {
-        // 1️⃣ تحقق من أن الـ schedule موجود والـ slots موجودة
-        if (schedule == null || schedule.getSlots() == null) {
-            System.err.println("⚠️ WARN: schedule is null or slots not loaded for clinic: " + name);
-            return new ArrayList<>();
-        }
-
-        // 2️⃣ جمع كل الـ booked slots في Set لتسريع البحث
-        Set<TimeSlot> bookedSlots = new HashSet<>();
-        for (Appointment appointment : appointments) {
-            bookedSlots.add(appointment.getAppointmentDateTime());
-        }
-        if (schedule.getSlots().isEmpty()) {
-            schedule.generateTimeSlots(LocalDate.now(), LocalDate.now().plusDays(30));
-        }
-
-        List<TimeSlot> availableSlots = new ArrayList<>();
-        for (TimeSlot slot : schedule.getSlots()) {
-            if (!bookedSlots.contains(slot)) {
-                availableSlots.add(slot);
-            }
-        }
-
-
-        return availableSlots;
-    }*/
     public void cancelAppointmentsInDay(DayOfWeek day) {
         List<Appointment> toCancel = new ArrayList<>();
         for(Appointment a : appointments) {
@@ -194,10 +151,7 @@ public class Clinic {
             System.out.println("Appointment for " + a.getPatient().getName() + " cancelled on " + day);
         }
     }
-    
-//    public void addToWaitingList(Patient patient) {
-//        waitingList.add(new WaitingList(patient,this));
-//    }
+
     
     public void notifyWaitingList(TimeSlot freedSlot) {
         if(waitingList.isEmpty()) return;
@@ -293,7 +247,7 @@ public class Clinic {
 
 
             return schedule.getWeeklyRules().stream()
-                    .map(rule -> rule.getDay().toString().substring(0, 3).toUpperCase()) // تحويل اليوم إلى MON, TUE...
+                    .map(rule -> rule.getDay().toString().substring(0, 3).toUpperCase())
                     .collect(Collectors.joining(" | "));
         }
         return "N/A";

@@ -7,11 +7,10 @@ public class WaitingList {
     private int id;
     private Patient patient;
     private Clinic clinic;
-    private LocalDate date;                  // ← مهم جدًا
+    private LocalDate date;
     private LocalDateTime requestTime;
-    private WaitingStatus status;            // ← نوع جديد (مش Status العادي)
+    private WaitingStatus status;
 
-    // ★ constructor كامل
     public WaitingList(int id, Patient patient, Clinic clinic, LocalDate date, LocalDateTime requestTime, WaitingStatus status) {
         this.id = id;
         this.patient = patient;
@@ -21,7 +20,6 @@ public class WaitingList {
         this.status = status;
     }
 
-    // constructor بدون id (للاستخدام عند الإضافة)
     public WaitingList(Patient patient, Clinic clinic, LocalDate date) {
         this(0, patient, clinic, date, LocalDateTime.now(), WaitingStatus.PENDING);
     }

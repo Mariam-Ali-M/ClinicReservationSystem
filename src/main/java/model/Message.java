@@ -5,10 +5,6 @@
 package model;
 
 import java.time.*;
-/**
- *
- * @author noursameh
- */
 
 
 // Represents a single message between a patient and a practitioner

@@ -5,10 +5,7 @@
 package model;
 import java.time.LocalDate;
 import java.util.*;
-/**
- * Represents a patient in the clinic system.
- * A Patient is a subclass of User who can book/cancel appointments and submit ratings.
- */
+
 public class Patient extends User {
     private List<Appointment> patientAppointments;// List of this patient's appointments
     
